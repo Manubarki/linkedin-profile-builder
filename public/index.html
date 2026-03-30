@@ -201,7 +201,7 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
           <div class="drop-prompt" id="sc-prompt">
             <div class="drop-icon">🖼️</div>
             <div class="drop-title">Drop screenshots here or click to browse</div>
-            <div class="drop-sub">PNG, JPG · Multiple files · Scroll screenshots capture more</div>
+            <div class="drop-sub">PNG, JPG · Max 3 screenshots · 800px compressed automatically</div>
           </div>
           <div class="previews" id="sc-previews" style="display:none"></div>
           <div class="preview-count" id="sc-count" style="display:none"></div>
@@ -230,7 +230,7 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
           <div class="drop-prompt" id="t-prompt">
             <div class="drop-icon">🖼️</div>
             <div class="drop-title">Drop screenshots here or click to browse</div>
-            <div class="drop-sub">PNG, JPG · More screenshots = richer output</div>
+            <div class="drop-sub">PNG, JPG · Max 3 screenshots · 800px compressed automatically</div>
           </div>
           <div class="previews" id="t-previews" style="display:none"></div>
           <div class="preview-count" id="t-count" style="display:none"></div>
@@ -355,7 +355,7 @@ async function compressImage(file){
     const img=new Image();
     const url=URL.createObjectURL(file);
     img.onload=()=>{
-      const MAX=1200;
+      const MAX=800;
       let w=img.width,h=img.height;
       if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
       const canvas=document.createElement('canvas');
@@ -366,15 +366,16 @@ async function compressImage(file){
         const reader=new FileReader();
         reader.onload=e=>resolve({data:e.target.result.split(',')[1],mediaType:'image/jpeg'});
         reader.readAsDataURL(blob);
-      },'image/jpeg',0.75);
+      },'image/jpeg',0.6);
     };
     img.src=url;
   });
 }
 
 async function processImages(files,key){
-  const valid=files.filter(f=>f.type.startsWith('image/'));
+  const valid=files.filter(f=>f.type.startsWith('image/')).slice(0,3);
   if(!valid.length){alert('Please upload image files (PNG, JPG).');return}
+  if(files.length>3) alert('Max 3 screenshots — only the first 3 will be used.');
   const compressed=await Promise.all(valid.map(f=>compressImage(f)));
   imgs[key].push(...compressed);
   renderPreviews(key);
