@@ -350,19 +350,34 @@ function offDrag(id){document.getElementById(id).classList.remove('drag')}
 function onDropImg(e,key,zoneId){e.preventDefault();offDrag(zoneId);processImages([...e.dataTransfer.files],key)}
 function onImgFile(inputId,key){processImages([...document.getElementById(inputId).files],key)}
 
-function processImages(files,key){
+async function compressImage(file){
+  return new Promise(resolve=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const MAX=1200;
+      let w=img.width,h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob=>{
+        const reader=new FileReader();
+        reader.onload=e=>resolve({data:e.target.result.split(',')[1],mediaType:'image/jpeg'});
+        reader.readAsDataURL(blob);
+      },'image/jpeg',0.75);
+    };
+    img.src=url;
+  });
+}
+
+async function processImages(files,key){
   const valid=files.filter(f=>f.type.startsWith('image/'));
   if(!valid.length){alert('Please upload image files (PNG, JPG).');return}
-  let loaded=0;
-  valid.forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=e=>{
-      imgs[key].push({data:e.target.result.split(',')[1],mediaType:file.type});
-      loaded++;
-      if(loaded===valid.length) renderPreviews(key);
-    };
-    reader.readAsDataURL(file);
-  });
+  const compressed=await Promise.all(valid.map(f=>compressImage(f)));
+  imgs[key].push(...compressed);
+  renderPreviews(key);
 }
 
 function renderPreviews(key){
