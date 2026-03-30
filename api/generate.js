@@ -1,15 +1,3 @@
-async function fetchLinkedInProfile(linkedinUrl) {
-  try {
-    const jinaUrl = `https://r.jina.ai/${encodeURIComponent(linkedinUrl)}`;
-    const res = await fetch(jinaUrl, {
-      headers: { "Accept": "text/plain", "X-Timeout": "15" },
-    });
-    if (!res.ok) return "";
-    const text = await res.text();
-    return text.slice(0, 8000);
-  } catch(e) { return ""; }
-}
-
 async function fetchGitHubData(githubUrl) {
   try {
     const match = githubUrl.match(/github\.com\/([^\/\?#]+)/);
@@ -47,31 +35,41 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { prompt, githubUrl, linkedinUrl, mode, pdfText } = req.body;
-
+    const { prompt, githubUrl, mode, screenshots } = req.body;
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "API key not configured" });
 
-    // Fetch LinkedIn profile from URL if no PDF text
-    let linkedinText = pdfText || "";
-    if (!linkedinText && linkedinUrl && linkedinUrl.includes("linkedin.com")) {
-      linkedinText = await fetchLinkedInProfile(linkedinUrl);
-    }
-
-    // Fetch GitHub data
+    // Build GitHub context
     let githubContext = "";
     if (githubUrl && githubUrl.includes("github.com")) {
       const ghData = await fetchGitHubData(githubUrl);
       githubContext = formatGitHubContext(ghData);
     }
 
-    const fullPrompt = prompt
-      .replace("__GITHUB_DATA__", githubContext)
-      .replace("__LINKEDIN_TEXT__", linkedinText || "No profile text available.");
+    const fullPrompt = prompt.replace("__GITHUB_DATA__", githubContext);
+
+    // Build message content — images first, then text prompt
+    let messageContent = [];
+
+    if (screenshots && screenshots.length > 0) {
+      for (const img of screenshots) {
+        // img = { data: base64string, mediaType: "image/png" }
+        messageContent.push({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: img.mediaType || "image/png",
+            data: img.data
+          }
+        });
+      }
+    }
+
+    messageContent.push({ type: "text", text: fullPrompt });
 
     const systemPrompt = mode === "score"
-      ? "You are a LinkedIn profile expert. Analyse profiles and return detailed section-by-section scoring. Respond with ONLY a valid JSON object — no markdown fences, no text outside the JSON."
-      : "You are a world-class personal brand strategist and LinkedIn profile writer. Respond with ONLY a valid JSON object — no markdown fences, just raw JSON starting with { and ending with }.";
+      ? "You are a LinkedIn profile expert. Analyse the profile screenshots provided and return detailed section-by-section scoring. Respond with ONLY a valid JSON object — no markdown fences, no text outside the JSON."
+      : "You are a world-class personal brand strategist and LinkedIn profile writer. Analyse the LinkedIn profile screenshots provided and rewrite the profile. Respond with ONLY a valid JSON object — no markdown fences, just raw JSON starting with { and ending with }.";
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -81,10 +79,10 @@ export default async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5",
+        model: "claude-sonnet-4-5",
         max_tokens: 4000,
         system: systemPrompt,
-        messages: [{ role: "user", content: fullPrompt }],
+        messages: [{ role: "user", content: messageContent }],
       }),
     });
 

@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LinkedIn Profile Builder AI</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Lora:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -31,7 +30,6 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
 .card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:28px;margin-bottom:16px}
 .card h2{font-family:'Lora',serif;font-size:1.3rem;font-weight:600;margin-bottom:5px}
 .card .sub{font-size:12px;color:var(--ink3);line-height:1.65;margin-bottom:22px}
-.istrip{background:var(--blue-lt);border:1px solid rgba(10,102,194,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--blue-dk);line-height:1.6;margin-bottom:18px}
 .sep{height:1px;background:var(--bdr);margin:20px 0}
 .slabel{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink3);margin-bottom:14px}
 .fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
@@ -43,10 +41,24 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
 .hint{font-size:11px;color:var(--ink4);line-height:1.5}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:560px){.r2{grid-template-columns:1fr}}
-.drop{border:2px dashed rgba(10,102,194,.3);border-radius:12px;padding:28px 20px;text-align:center;background:var(--blue-lt);position:relative;cursor:pointer;transition:all .2s}
-.drop.drag{border-color:var(--blue);background:rgba(10,102,194,.07)}
-.drop.ready{border-style:solid;border-color:var(--green);background:rgba(5,118,66,.05)}
-.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.screenshot-zone{border:2px dashed rgba(10,102,194,.3);border-radius:12px;background:var(--blue-lt);position:relative;cursor:pointer;transition:all .2s;overflow:hidden;min-height:120px}
+.screenshot-zone.drag{border-color:var(--blue);background:rgba(10,102,194,.07)}
+.screenshot-zone.has-files{border-style:solid;border-color:var(--green);background:rgba(5,118,66,.04)}
+.screenshot-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}
+.drop-prompt{padding:28px 20px;text-align:center;pointer-events:none}
+.drop-icon{font-size:32px;margin-bottom:10px}
+.drop-title{font-size:13px;font-weight:600;color:var(--blue);margin-bottom:4px}
+.drop-sub{font-size:11px;color:var(--ink3)}
+.previews{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;padding:14px;pointer-events:none}
+.preview-item{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--bdr)}
+.preview-item img{width:100%;height:90px;object-fit:cover;display:block}
+.preview-remove{position:absolute;top:4px;right:4px;width:20px;height:20px;background:rgba(0,0,0,.65);border:none;border-radius:50%;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;pointer-events:all;z-index:3;line-height:1;padding:0}
+.preview-count{font-size:12px;color:var(--green);font-weight:600;padding:8px 14px;border-top:1px solid rgba(5,118,66,.15);background:rgba(5,118,66,.04);text-align:center;pointer-events:none}
+.steps-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+@media(max-width:500px){.steps-row{grid-template-columns:1fr}}
+.step-box{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:14px;text-align:center}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+.step-text{font-size:12px;color:var(--ink2);line-height:1.5}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .chip{padding:7px 14px;border-radius:100px;border:1.5px solid rgba(0,0,0,.12);background:var(--card);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;user-select:none;transition:all .15s}
 .chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -65,8 +77,6 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
 .loading p{font-size:12px;color:var(--ink3);margin-bottom:16px}
 .lstep{font-size:12px;color:var(--ink3);padding:3px 0;opacity:0;animation:fup .4s ease forwards}
 .err{background:#FFF5F5;border:1px solid #FCA5A5;border-radius:12px;padding:14px 18px;font-size:13px;color:#991B1B;margin-bottom:16px;line-height:1.6}
-
-/* Score UI */
 .score-wrap{animation:fup .5s ease forwards}
 .overall-card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:28px;margin-bottom:16px;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
 .score-dial{position:relative;width:120px;height:120px;flex-shrink:0}
@@ -74,8 +84,8 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
 .dial-bg{fill:none;stroke:#E5E7EB;stroke-width:10}
 .dial-fill{fill:none;stroke-width:10;stroke-linecap:round}
 .dial-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.dial-num .dn{font-size:28px;font-weight:700;line-height:1}
-.dial-num .dl{font-size:11px;color:var(--ink3);margin-top:2px}
+.dn{font-size:28px;font-weight:700;line-height:1}
+.dl{font-size:11px;color:var(--ink3);margin-top:2px}
 .grade-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:700}
 .grade-a{background:var(--green-lt);color:var(--green)}
 .grade-b{background:#EFF6FF;color:#1D4ED8}
@@ -93,23 +103,16 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
 .ss-good{background:#EFF6FF;color:#1D4ED8}
 .ss-weak{background:var(--amber-lt);color:var(--amber)}
 .ss-missing{background:var(--red-lt);color:var(--red)}
-.ss-manual{background:#F3F4F6;color:#6B7280}
 .score-bar-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:4px}
 .score-bar-track{height:6px;background:#E5E7EB;border-radius:100px;overflow:hidden;margin-bottom:10px}
 @keyframes barGrow{from{width:0}to{width:var(--w)}}
 .score-bar-fill{height:100%;border-radius:100px;animation:barGrow 1s cubic-bezier(.4,0,.2,1) .1s forwards;width:0}
-.sf-strong{background:var(--green)}
-.sf-good{background:var(--blue)}
-.sf-weak{background:#F59E0B}
-.sf-missing{background:#D1D5DB}
-.sf-manual{background:#9CA3AF}
+.sf-strong{background:var(--green)}.sf-good{background:var(--blue)}.sf-weak{background:#F59E0B}.sf-missing{background:#D1D5DB}
 .sec-feedback{font-size:12px;color:var(--ink2);line-height:1.65;margin-bottom:8px}
 .sec-tips{list-style:none;padding:0;display:flex;flex-direction:column;gap:4px}
 .sec-tips li{font-size:11px;color:var(--ink3);line-height:1.5;padding-left:14px;position:relative}
 .sec-tips li::before{content:"→";position:absolute;left:0;color:var(--blue);font-size:10px;top:1px}
 .sec-tips li.good-tip::before{content:"✓";color:var(--green)}
-
-/* Transform output */
 .out-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
 .out-grid{display:grid;grid-template-columns:1fr 288px;gap:12px;align-items:start}
 @media(max-width:700px){.out-grid{grid-template-columns:1fr}}
@@ -147,15 +150,11 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
 .sk{padding:6px 14px;border-radius:100px;font-size:12px;font-weight:500}
 .sk.core{background:var(--blue);color:#fff;border:1px solid var(--blue)}
 .sk.reg{background:var(--blue-lt);color:var(--blue-dk);border:1px solid rgba(10,102,194,.2)}
-.edu-item{display:flex;gap:14px;margin-bottom:14px}
-.edu-item:last-child{margin-bottom:0}
+.edu-item{display:flex;gap:14px;margin-bottom:14px}.edu-item:last-child{margin-bottom:0}
 .edu-ic{width:46px;height:46px;flex-shrink:0;border-radius:8px;background:#FEF3C7;border:1px solid #FDE68A;display:flex;align-items:center;justify-content:center;font-size:20px}
-.edu-sch{font-size:14px;font-weight:700}
-.edu-deg{font-size:13px;color:var(--ink2)}
-.edu-yr{font-size:12px;color:var(--ink3)}
+.edu-sch{font-size:14px;font-weight:700}.edu-deg{font-size:13px;color:var(--ink2)}.edu-yr{font-size:12px;color:var(--ink3)}
 .cp{background:none;border:1px solid var(--bdr);border-radius:100px;padding:5px 14px;font-size:11px;color:var(--ink3);cursor:pointer;font-family:inherit;margin-top:10px;transition:all .2s}
-.cp:hover{border-color:var(--blue);color:var(--blue)}
-.cp.ok{border-color:var(--green);color:var(--green)}
+.cp:hover{border-color:var(--blue);color:var(--blue)}.cp.ok{border-color:var(--green);color:var(--green)}
 .tips-card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:20px;position:sticky;top:20px}
 .tips-hd{font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:6px}
 .str-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:5px}
@@ -176,12 +175,12 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
   <div class="topbar">
     <div class="logo">
       <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></div>
-      <div><div class="logo-name">LinkedIn Profile Builder AI</div><div class="logo-sub">Score · Transform · Build from Scratch</div></div>
+      <div><div class="logo-name">LinkedIn Profile Builder AI</div><div class="logo-sub">Score · Transform · Build — Powered by Claude Vision</div></div>
     </div>
     <div class="mode-tabs">
-      <button class="mtab on" onclick="setMode('score')">📊 Score my profile</button>
-      <button class="mtab" onclick="setMode('transform')">✦ Transform existing</button>
-      <button class="mtab" onclick="setMode('scratch')">＋ Build from scratch</button>
+      <button class="mtab on" onclick="setMode('score')">📊 Score</button>
+      <button class="mtab" onclick="setMode('transform')">✦ Transform</button>
+      <button class="mtab" onclick="setMode('scratch')">＋ From scratch</button>
     </div>
   </div>
 
@@ -189,33 +188,30 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
   <div class="panel on" id="p-score">
     <div class="card" id="score-form">
       <h2>Score my LinkedIn profile</h2>
-      <p class="sub">Upload your LinkedIn PDF and get a detailed section-by-section score — what's strong, what's weak, and exactly what to fix. Every block of your profile gets graded.</p>
-      <div class="fg">
-        <label>LinkedIn profile URL <span class="opt">Recommended</span></label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <input type="url" id="sc-li-url" placeholder="https://linkedin.com/in/your-username" style="flex:1">
-        </div>
-        <span class="hint">Make sure your LinkedIn profile is set to Public. We fetch it automatically.</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin:4px 0 14px">
-        <div style="flex:1;height:1px;background:var(--bdr)"></div>
-        <span style="font-size:11px;color:var(--ink4)">or upload PDF instead</span>
-        <div style="flex:1;height:1px;background:var(--bdr)"></div>
+      <p class="sub">Take screenshots of your LinkedIn profile and upload them. Claude Vision reads every section — including your profile photo and background banner — and scores each one in detail.</p>
+      <div class="steps-row">
+        <div class="step-box"><div class="step-num">1</div><div class="step-text">Open your LinkedIn profile in browser</div></div>
+        <div class="step-box"><div class="step-num">2</div><div class="step-text">Take full-page screenshots (scroll to capture all sections)</div></div>
+        <div class="step-box"><div class="step-num">3</div><div class="step-text">Upload all screenshots below</div></div>
       </div>
       <div class="fg">
-        <label>LinkedIn profile PDF <span class="opt">Alternative</span></label>
-        <div class="drop" id="sc-drop" ondragover="onDrag(event,'sc-drop')" ondragleave="offDrag('sc-drop')" ondrop="onDrop(event,'sc-drop','sc-pdf','sc-dtext','sc')">
-          <input type="file" id="sc-pdf" accept=".pdf,application/pdf" onchange="onFile('sc-pdf','sc-drop','sc-dtext','sc')">
-          <div id="sc-dicon" style="font-size:28px;margin-bottom:8px">📄</div>
-          <div id="sc-dtext" style="font-size:13px;font-weight:600;color:#0A66C2;margin-bottom:3px">Drop your PDF here or click to browse</div>
-          <div style="font-size:11px;color:#666">LinkedIn profile → More → Save to PDF</div>
+        <label>Profile screenshots</label>
+        <div class="screenshot-zone" id="sc-zone" ondragover="onDrag(event,'sc-zone')" ondragleave="offDrag('sc-zone')" ondrop="onDropImg(event,'sc','sc-zone')">
+          <input type="file" id="sc-imgs" accept="image/*" multiple onchange="onImgFile('sc-imgs','sc')">
+          <div class="drop-prompt" id="sc-prompt">
+            <div class="drop-icon">🖼️</div>
+            <div class="drop-title">Drop screenshots here or click to browse</div>
+            <div class="drop-sub">PNG, JPG · Multiple files · Scroll screenshots capture more</div>
+          </div>
+          <div class="previews" id="sc-previews" style="display:none"></div>
+          <div class="preview-count" id="sc-count" style="display:none"></div>
         </div>
       </div>
       <div class="btn-row"><button class="btn-p" onclick="runScore()">📊 Analyse my profile</button></div>
     </div>
     <div class="loading" id="score-load" style="display:none">
       <div class="spinner"></div><h3>Analysing your profile…</h3>
-      <p>Scoring every section against LinkedIn best practices.</p>
+      <p>Claude Vision is reading your screenshots and scoring every section.</p>
       <div id="score-steps"></div>
     </div>
     <div class="err" id="score-err" style="display:none"></div>
@@ -225,40 +221,38 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
   <!-- TRANSFORM -->
   <div class="panel" id="p-transform">
     <div class="card" id="t-form">
-      <h2>Elevate your existing LinkedIn presence</h2>
-      <p class="sub">Upload your LinkedIn PDF. AI reads every section and rewrites your entire profile for maximum personal brand impact.</p>
+      <h2>Transform your LinkedIn profile</h2>
+      <p class="sub">Upload screenshots of your LinkedIn profile. Claude will read every section and rewrite your entire profile for maximum personal brand impact.</p>
       <div class="fg">
-        <label>LinkedIn profile URL <span class="opt">Recommended</span></label>
-        <input type="url" id="t-li-url" placeholder="https://linkedin.com/in/your-username">
-        <span class="hint">Make sure your LinkedIn profile is set to Public.</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin:4px 0 14px">
-        <div style="flex:1;height:1px;background:var(--bdr)"></div>
-        <span style="font-size:11px;color:var(--ink4)">or upload PDF instead</span>
-        <div style="flex:1;height:1px;background:var(--bdr)"></div>
-      </div>
-      <div class="fg">
-        <label>LinkedIn profile PDF <span class="opt">Alternative</span></label>
-        <div class="drop" id="t-drop" ondragover="onDrag(event,'t-drop')" ondragleave="offDrag('t-drop')" ondrop="onDrop(event,'t-drop','t-pdf','t-dtext','t')">
-          <input type="file" id="t-pdf" accept=".pdf,application/pdf" onchange="onFile('t-pdf','t-drop','t-dtext','t')">
-          <div id="t-dicon" style="font-size:28px;margin-bottom:8px">📄</div>
-          <div id="t-dtext" style="font-size:13px;font-weight:600;color:#0A66C2;margin-bottom:3px">Drop your PDF here or click to browse</div>
-          <div style="font-size:11px;color:#666">LinkedIn profile → More → Save to PDF</div>
+        <label>Profile screenshots</label>
+        <div class="screenshot-zone" id="t-zone" ondragover="onDrag(event,'t-zone')" ondragleave="offDrag('t-zone')" ondrop="onDropImg(event,'t','t-zone')">
+          <input type="file" id="t-imgs" accept="image/*" multiple onchange="onImgFile('t-imgs','t')">
+          <div class="drop-prompt" id="t-prompt">
+            <div class="drop-icon">🖼️</div>
+            <div class="drop-title">Drop screenshots here or click to browse</div>
+            <div class="drop-sub">PNG, JPG · More screenshots = richer output</div>
+          </div>
+          <div class="previews" id="t-previews" style="display:none"></div>
+          <div class="preview-count" id="t-count" style="display:none"></div>
         </div>
       </div>
-      <div class="fg"><label>GitHub URL <span class="opt">Optional</span></label><input type="url" id="t-gh" placeholder="https://github.com/your-username"></div>
+      <div class="fg"><label>GitHub URL <span class="opt">Optional</span></label>
+        <input type="url" id="t-gh" placeholder="https://github.com/your-username">
+      </div>
       <div class="sep"></div><div class="slabel">Brand direction</div>
       <div class="fg"><label>What do you want to be known for?</label><div class="chips" id="t-chips"></div></div>
       <div class="r2">
         <div class="fg"><label>Tone</label><select id="t-tone"></select></div>
         <div class="fg"><label>Audience</label><select id="t-aud"></select></div>
       </div>
-      <div class="fg"><label>Special instructions <span class="opt">Optional</span></label><textarea id="t-notes" rows="2" placeholder="e.g. Highlight AI tooling work. Avoid clichés."></textarea></div>
+      <div class="fg"><label>Special instructions <span class="opt">Optional</span></label>
+        <textarea id="t-notes" rows="2" placeholder="e.g. Highlight AI tooling work. Avoid clichés."></textarea>
+      </div>
       <div class="btn-row"><button class="btn-p" onclick="runTransform()">✦ Transform my profile</button></div>
     </div>
     <div class="loading" id="t-load" style="display:none">
       <div class="spinner"></div><h3>Transforming your profile…</h3>
-      <p>Reading your PDF and rewriting every section for maximum brand impact.</p>
+      <p>Claude is reading your screenshots and rewriting every section.</p>
       <div id="t-steps"></div>
     </div>
     <div class="err" id="t-err" style="display:none"></div>
@@ -269,7 +263,7 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
   <div class="panel" id="p-scratch">
     <div class="card" id="s-form">
       <h2>Build your profile from scratch</h2>
-      <p class="sub">Tell us about yourself and AI will craft a complete, compelling LinkedIn profile that establishes your personal brand.</p>
+      <p class="sub">No LinkedIn yet? Tell us about yourself and Claude will craft a complete, compelling profile that establishes your personal brand.</p>
       <div class="slabel">Who you are</div>
       <div class="r2">
         <div class="fg"><label>Full name</label><input id="s-name" placeholder="e.g. Priya Sharma"></div>
@@ -282,15 +276,13 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
         </div>
       </div>
       <div class="sep"></div><div class="slabel">Your experience</div>
-      <div class="fg">
-        <label>Work history</label>
-        <textarea id="s-exp" rows="5" placeholder="Brain-dump your roles — don't worry about formatting.&#10;&#10;e.g.&#10;Talent Partner @ Atlan (2022–now) – hiring for data/AI roles, built AI sourcing tools&#10;Recruiter @ Microsoft IDC (2018–2022) – led campus hiring"></textarea>
-        <span class="hint">The more detail, the richer your profile will be.</span>
+      <div class="fg"><label>Work history</label>
+        <textarea id="s-exp" rows="5" placeholder="Brain-dump your roles.&#10;&#10;e.g.&#10;Talent Partner @ Atlan (2022–now) – hiring for data/AI roles, built AI sourcing tools&#10;Recruiter @ Microsoft IDC (2018–2022) – led campus hiring"></textarea>
       </div>
       <div class="sep"></div><div class="slabel">Skills & education</div>
       <div class="r2">
-        <div class="fg"><label>Key skills & tools</label><textarea id="s-skills" rows="3" placeholder="e.g. Technical recruiting, Ashby, LinkedIn Recruiter, Python, Claude API"></textarea></div>
-        <div class="fg"><label>Education</label><textarea id="s-edu" rows="3" placeholder="e.g.&#10;MBA, Christ University, 2014&#10;B.Com, Bangalore University, 2011"></textarea></div>
+        <div class="fg"><label>Key skills & tools</label><textarea id="s-skills" rows="3" placeholder="e.g. Technical recruiting, Ashby, Python, Claude API"></textarea></div>
+        <div class="fg"><label>Education</label><textarea id="s-edu" rows="3" placeholder="e.g.&#10;MBA, Christ University, 2014"></textarea></div>
       </div>
       <div class="sep"></div><div class="slabel">Brand direction</div>
       <div class="fg"><label>What do you want to be known for?</label><div class="chips" id="s-chips"></div></div>
@@ -306,7 +298,7 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
     </div>
     <div class="loading" id="s-load" style="display:none">
       <div class="spinner"></div><h3>Building your brand profile…</h3>
-      <p>Crafting every section of your LinkedIn profile from scratch.</p>
+      <p>Crafting every section from scratch.</p>
       <div id="s-steps"></div>
     </div>
     <div class="err" id="s-err" style="display:none"></div>
@@ -316,8 +308,6 @@ body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);mi
 <div class="toast" id="toast">Copied!</div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
 const FOCUS=[
   {v:'deep technical expertise',l:'Technical Expert'},
   {v:'thought leadership and strategy',l:'Thought Leader'},
@@ -330,21 +320,21 @@ const FOCUS=[
 ];
 const TONES=['Authoritative & Credible','Warm & Approachable','Bold & Ambitious','Precise & Technical','Story-driven & Personal'];
 const AUDS=['Industry peers & recruiters','Founders & investors','Enterprise clients','Tech community','Engineering community'];
-const tFocus=new Set(['deep technical expertise']), sFocus=new Set(['deep technical expertise']);
-const pdfTexts={sc:'',t:''};
+const tFocus=new Set(['deep technical expertise']),sFocus=new Set(['deep technical expertise']);
+const imgs={sc:[],t:[]};
 let allOutputText='';
 
 (function init(){
   ['t-tone','s-tone'].forEach(id=>{const el=document.getElementById(id);TONES.forEach(t=>{const o=document.createElement('option');o.textContent=t;el.appendChild(o)})});
   ['t-aud','s-aud'].forEach(id=>{const el=document.getElementById(id);AUDS.forEach(a=>{const o=document.createElement('option');o.textContent=a;el.appendChild(o)})});
-  buildChips('t-chips',tFocus); buildChips('s-chips',sFocus);
+  buildChips('t-chips',tFocus);buildChips('s-chips',sFocus);
 })();
 
 function buildChips(cid,set){
   const c=document.getElementById(cid);
   FOCUS.forEach(f=>{
     const d=document.createElement('div');
-    d.className='chip'+(set.has(f.v)?' on':''); d.textContent=f.l;
+    d.className='chip'+(set.has(f.v)?' on':'');d.textContent=f.l;
     d.onclick=()=>{if(set.has(f.v)){set.delete(f.v);d.classList.remove('on')}else{set.add(f.v);d.classList.add('on')}};
     c.appendChild(d);
   });
@@ -357,48 +347,67 @@ function setMode(m){
 
 function onDrag(e,id){e.preventDefault();document.getElementById(id).classList.add('drag')}
 function offDrag(id){document.getElementById(id).classList.remove('drag')}
-function onDrop(e,dropId,inputId,ftextId,key){e.preventDefault();offDrag(dropId);handlePDF(e.dataTransfer.files[0],dropId,ftextId,key)}
-function onFile(inputId,dropId,ftextId,key){handlePDF(document.getElementById(inputId).files[0],dropId,ftextId,key)}
+function onDropImg(e,key,zoneId){e.preventDefault();offDrag(zoneId);processImages([...e.dataTransfer.files],key)}
+function onImgFile(inputId,key){processImages([...document.getElementById(inputId).files],key)}
 
-async function handlePDF(file,dropId,ftextId,key){
-  if(!file||(!file.name.endsWith('.pdf')&&file.type!=='application/pdf')){alert('Please upload a PDF file.');return}
-  const drop=document.getElementById(dropId);
-  const txt=document.getElementById(ftextId);
-  const iconId=dropId.replace('-drop','-dicon');
-  const icon=document.getElementById(iconId);
-  drop.classList.add('ready');
-  if(icon) icon.textContent='⏳';
-  txt.style.color='#057642'; txt.textContent='Reading '+file.name+'…';
-  try{
-    const ab=await file.arrayBuffer();
-    const pdf=await pdfjsLib.getDocument({data:ab}).promise;
-    let text='';
-    for(let i=1;i<=pdf.numPages;i++){
-      const page=await pdf.getPage(i);
-      const c=await page.getTextContent();
-      text+=c.items.map(x=>x.str).join(' ')+'\n';
-    }
-    pdfTexts[key]=text.slice(0,8000);
-    if(icon) icon.textContent='✅';
-    txt.textContent='✓ '+file.name+' · '+pdf.numPages+' page(s) ready';
-  }catch(err){
-    drop.classList.remove('ready');
-    if(icon) icon.textContent='❌';
-    txt.style.color='#991B1B'; txt.textContent='Could not read PDF: '+err.message; pdfTexts[key]='';
-  }
+function processImages(files,key){
+  const valid=files.filter(f=>f.type.startsWith('image/'));
+  if(!valid.length){alert('Please upload image files (PNG, JPG).');return}
+  let loaded=0;
+  valid.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      imgs[key].push({data:e.target.result.split(',')[1],mediaType:file.type});
+      loaded++;
+      if(loaded===valid.length) renderPreviews(key);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
-const SCORE_STEPS=['Parsing your profile sections…','Checking headline strength…','Analysing About section…','Reviewing experience bullets…','Scoring skills & completeness…','Generating recommendations…'];
-const T_STEPS=['Analysing profile content…','Identifying brand opportunities…','Rewriting your headline…','Crafting About section…','Rewriting experience bullets…','Optimising skills…'];
+function renderPreviews(key){
+  const zoneId=key==='sc'?'sc-zone':'t-zone';
+  const previewsId=key+'-previews', countId=key+'-count', promptId=key+'-prompt';
+  document.getElementById(zoneId).classList.add('has-files');
+  document.getElementById(promptId).style.display='none';
+  const prev=document.getElementById(previewsId);
+  prev.style.display='grid';
+  prev.innerHTML=imgs[key].map((img,i)=>`
+    <div class="preview-item">
+      <img src="data:${img.mediaType};base64,${img.data}" alt="Screenshot ${i+1}">
+      <button class="preview-remove" onclick="removeImg('${key}',${i})">×</button>
+    </div>`).join('');
+  const cnt=document.getElementById(countId);
+  cnt.style.display='block';
+  cnt.textContent=`✓ ${imgs[key].length} screenshot${imgs[key].length>1?'s':''} ready — Claude will read all of them`;
+}
+
+function removeImg(key,idx){
+  imgs[key].splice(idx,1);
+  if(!imgs[key].length){
+    const zoneId=key==='sc'?'sc-zone':'t-zone';
+    document.getElementById(zoneId).classList.remove('has-files');
+    document.getElementById(key+'-previews').style.display='none';
+    document.getElementById(key+'-count').style.display='none';
+    document.getElementById(key+'-prompt').style.display='block';
+  } else renderPreviews(key);
+}
+
+const SCORE_STEPS=['Reading your screenshots…','Analysing profile photo & banner…','Scoring headline & About…','Reviewing experience bullets…','Checking skills & completeness…','Generating recommendations…'];
+const T_STEPS=['Reading your screenshots…','Identifying brand opportunities…','Rewriting your headline…','Crafting About section…','Rewriting experience bullets…'];
 const S_STEPS=['Reading your background…','Defining brand positioning…','Writing headline…','Crafting About section…','Building experience bullets…'];
 
 function animSteps(id,steps){
-  const c=document.getElementById(id); c.innerHTML='';
+  const c=document.getElementById(id);c.innerHTML='';
   steps.forEach((s,i)=>{const d=document.createElement('div');d.className='lstep';d.textContent=s;d.style.animationDelay=(i*1.4)+'s';c.appendChild(d)});
 }
 
-async function callAPI(prompt,githubUrl,mode,linkedinUrl,pdfText){
-  const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,githubUrl:githubUrl||'',mode,linkedinUrl:linkedinUrl||'',pdfText:pdfText||''})});
+async function callAPI(prompt,githubUrl,mode,screenshots){
+  const res=await fetch('/api/generate',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt,githubUrl:githubUrl||'',mode,screenshots:screenshots||[]})
+  });
   const data=await res.json();
   if(!res.ok) throw new Error(data.error||'Server error '+res.status);
   const raw=data.text||'';
@@ -408,47 +417,31 @@ async function callAPI(prompt,githubUrl,mode,linkedinUrl,pdfText){
   return JSON.parse(cleaned.slice(start,end+1));
 }
 
-// ── SCORE ──
 async function runScore(){
-  const scUrl=document.getElementById('sc-li-url').value.trim();
-  if(!pdfTexts.sc && !scUrl){alert('Please enter your LinkedIn URL or upload your PDF.');return}
+  if(!imgs.sc.length){alert('Please upload at least one screenshot of your LinkedIn profile.');return}
   document.getElementById('score-form').style.display='none';
   document.getElementById('score-load').style.display='block';
   document.getElementById('score-err').style.display='none';
   document.getElementById('score-output').style.display='none';
   animSteps('score-steps',SCORE_STEPS);
+  const prompt=`Analyse this LinkedIn profile from the screenshots and give a detailed section-by-section score.
+You can directly assess profile photo and background banner quality from the images.
 
-  const prompt=`Analyse this LinkedIn profile and provide a detailed section-by-section score.
-
-PROFILE TEXT:
-__LINKEDIN_TEXT__
-
-Important: Profile photo and background cover CANNOT be extracted from a LinkedIn PDF — LinkedIn does not include images in PDF exports. For BOTH of these sections always use: score=50, status="good", and feedback explaining they cannot be assessed from PDF and must be checked manually on LinkedIn.
-
-Return ONLY this exact JSON (no markdown fences):
-{
-  "overall_score": <0-100 integer>,
-  "overall_grade": "<A|B|C|D>",
-  "overall_summary": "<2-3 sentence overall assessment>",
-  "sections": [
-    {"id":"photo","name":"Profile Photo","icon":"📸","score":50,"status":"good","feedback":"Cannot be assessed from PDF export — check manually on LinkedIn that you have a professional, high-quality headshot","tips":["Use a professional headshot with good lighting and a clean background","Your face should fill 60–70% of the frame"]},
-    {"id":"cover","name":"Background Cover","icon":"🖼️","score":50,"status":"good","feedback":"Cannot be assessed from PDF export — check manually on LinkedIn that you have a custom background banner (not the default blue)","tips":["Add a custom banner that reflects your personal brand or expertise","Use 1584 x 396 px image for best quality"]},
-    {"id":"headline","name":"Headline","icon":"✏️","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<specific assessment of actual headline text>","tips":["<improvement>","<example direction>"]},
-    {"id":"about","name":"About / Summary","icon":"📝","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<hook quality, story, length, clichés found>","tips":["<tip>","<tip>"]},
-    {"id":"experience","name":"Experience","icon":"💼","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<bullet quality, metrics presence, verb strength>","tips":["<tip>","<tip>"]},
-    {"id":"skills","name":"Skills","icon":"🛠️","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<skill count, relevance, keyword gaps>","tips":["<tip>","<tip>"]},
-    {"id":"education","name":"Education","icon":"🎓","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<completeness>","tips":["<tip>"]},
-    {"id":"featured","name":"Featured Section","icon":"⭐","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<presence and quality of featured content>","tips":["<tip>","<tip>"]},
-    {"id":"recommendations","name":"Recommendations","icon":"💬","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<count and quality>","tips":["<tip>","<tip>"]},
-    {"id":"activity","name":"Activity & Posts","icon":"📣","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<content creation signals>","tips":["<tip>","<tip>"]}
-  ],
-  "top_strengths": ["<strength 1>","<strength 2>","<strength 3>"],
-  "top_fixes": ["<most impactful fix 1>","<fix 2>","<fix 3>"]
-}`;
-
+Return ONLY this JSON (no markdown):
+{"overall_score":<0-100>,"overall_grade":"<A|B|C|D>","overall_summary":"<2-3 sentence assessment>","sections":[
+{"id":"photo","name":"Profile Photo","icon":"📸","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<assess photo quality, professionalism, framing>","tips":["<tip>","<tip>"]},
+{"id":"cover","name":"Background Cover","icon":"🖼️","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<assess banner quality, branding>","tips":["<tip>"]},
+{"id":"headline","name":"Headline","icon":"✏️","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<specific assessment>","tips":["<tip>","<tip>"]},
+{"id":"about","name":"About / Summary","icon":"📝","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<hook, story, length, clichés>","tips":["<tip>","<tip>"]},
+{"id":"experience","name":"Experience","icon":"💼","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<bullet quality, metrics>","tips":["<tip>","<tip>"]},
+{"id":"skills","name":"Skills","icon":"🛠️","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<count, relevance>","tips":["<tip>","<tip>"]},
+{"id":"education","name":"Education","icon":"🎓","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<completeness>","tips":["<tip>"]},
+{"id":"featured","name":"Featured Section","icon":"⭐","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<presence and quality>","tips":["<tip>","<tip>"]},
+{"id":"recommendations","name":"Recommendations","icon":"💬","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<count and quality>","tips":["<tip>"]},
+{"id":"activity","name":"Activity & Posts","icon":"📣","score":<0-100>,"status":"<strong|good|weak|missing>","feedback":"<content signals>","tips":["<tip>"]}
+],"top_strengths":["<s1>","<s2>","<s3>"],"top_fixes":["<f1>","<f2>","<f3>"]}`;
   try{
-    const liUrl=document.getElementById('sc-li-url').value.trim();
-    const result=await callAPI(prompt,'','score',liUrl,pdfTexts.sc);
+    const result=await callAPI(prompt,'','score',imgs.sc);
     document.getElementById('score-load').style.display='none';
     document.getElementById('score-form').style.display='block';
     renderScore(result);
@@ -465,21 +458,16 @@ function renderScore(d){
   const gradeClass={A:'grade-a',B:'grade-b',C:'grade-c',D:'grade-d'}[d.overall_grade]||'grade-c';
   const circumference=2*Math.PI*50;
   const offset=circumference-(score/100)*circumference;
-
   const sectionsHtml=(d.sections||[]).map(sec=>{
     const sc=sec.score||0;
-    const isManual = (sec.id==='photo'||sec.id==='cover');
-const fillClass=isManual?'sf-manual':({'strong':'sf-strong','good':'sf-good','weak':'sf-weak','missing':'sf-missing'}[sec.status]||'sf-weak');
-    const statusClass=isManual?'ss-manual':({'strong':'ss-strong','good':'ss-good','weak':'ss-weak','missing':'ss-missing'}[sec.status]||'ss-weak');
-    const statusLabel=isManual?'Check manually':({'strong':'Strong','good':'Good','weak':'Needs Work','missing':'Missing'}[sec.status]||'Needs Work');
+    const fillClass={'strong':'sf-strong','good':'sf-good','weak':'sf-weak','missing':'sf-missing'}[sec.status]||'sf-weak';
+    const statusClass={'strong':'ss-strong','good':'ss-good','weak':'ss-weak','missing':'ss-missing'}[sec.status]||'ss-weak';
+    const statusLabel={'strong':'Strong','good':'Good','weak':'Needs Work','missing':'Missing'}[sec.status]||'Needs Work';
     const iconBg=sc>=80?'rgba(5,118,66,.1)':sc>=60?'rgba(10,102,194,.1)':sc>=40?'rgba(245,158,11,.1)':'rgba(204,16,22,.08)';
     const scoreColor=sc>=80?'#057642':sc>=60?'#0A66C2':sc>=40?'#B45309':'#CC1016';
     return `<div class="sec-card">
       <div class="sec-card-top">
-        <div class="sec-icon-name">
-          <div class="sec-icon" style="background:${iconBg}">${sec.icon||'•'}</div>
-          <div class="sec-name">${esc(sec.name)}</div>
-        </div>
+        <div class="sec-icon-name"><div class="sec-icon" style="background:${iconBg}">${sec.icon}</div><div class="sec-name">${esc(sec.name)}</div></div>
         <div class="sec-status ${statusClass}">${statusLabel}</div>
       </div>
       <div class="score-bar-labels"><span style="font-weight:600;color:${scoreColor}">${sc}/100</span></div>
@@ -488,7 +476,6 @@ const fillClass=isManual?'sf-manual':({'strong':'sf-strong','good':'sf-good','we
       <ul class="sec-tips">${(sec.tips||[]).map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
     </div>`;
   }).join('');
-
   const out=document.getElementById('score-output');
   out.innerHTML=`<div class="score-wrap">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
@@ -500,8 +487,7 @@ const fillClass=isManual?'sf-manual':({'strong':'sf-strong','good':'sf-good','we
         <svg viewBox="0 0 120 120">
           <circle class="dial-bg" cx="60" cy="60" r="50"/>
           <circle class="dial-fill" cx="60" cy="60" r="50" stroke="${dialColor}"
-            stroke-dasharray="${circumference.toFixed(1)}"
-            stroke-dashoffset="${circumference.toFixed(1)}"
+            stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${circumference.toFixed(1)}"
             style="stroke-dashoffset:${offset.toFixed(1)};transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1) .3s"/>
         </svg>
         <div class="dial-num"><span class="dn" style="color:${dialColor}">${score}</span><span class="dl">/ 100</span></div>
@@ -532,23 +518,24 @@ const fillClass=isManual?'sf-manual':({'strong':'sf-strong','good':'sf-good','we
   setTimeout(()=>out.scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
 
-// ── TRANSFORM ──
 function buildGenPrompt(ctx){
-  return `${ctx}\n__GITHUB_DATA__\n\nReturn ONLY raw JSON (no markdown):\n{"name":"","location":"","headline":"Brand-first ≤220 chars","tagline":"1-2 sentence Featured brand statement","brand_angles":["3 labels"],"about":"200-280 words, hook first, story arc, first person, no clichés","experience":[{"role":"","company":"","type":"Full-time","period":"","bullets":["verb+metric","bullet","bullet"]}],"skills":["14-16 real skills"],"education":[{"school":"","degree":"","year":""}],"score_before":"Beginner|Intermediate|Advanced|All-Star","score_after":"All-Star","tips":["4 specific tips"]}`;
+  return `${ctx}\n__GITHUB_DATA__\n\nReturn ONLY raw JSON:\n{"name":"","location":"","headline":"Brand-first ≤220 chars","tagline":"1-2 sentence Featured brand statement","brand_angles":["3 labels"],"about":"200-280 words, hook first, story arc, first person, no clichés","experience":[{"role":"","company":"","type":"Full-time","period":"","bullets":["verb+metric","bullet","bullet"]}],"skills":["14-16 real skills"],"education":[{"school":"","degree":"","year":""}],"score_before":"Beginner|Intermediate|Advanced|All-Star","score_after":"All-Star","tips":["4 specific tips"]}`;
 }
 
 async function runTransform(){
-  const tUrl=document.getElementById('t-li-url').value.trim();
-  if(!pdfTexts.t && !tUrl){alert('Please enter your LinkedIn URL or upload your PDF.');return}
+  if(!imgs.t.length){alert('Please upload at least one screenshot of your LinkedIn profile.');return}
   document.getElementById('t-form').style.display='none';
   document.getElementById('t-load').style.display='block';
   document.getElementById('t-err').style.display='none';
   document.getElementById('t-output').style.display='none';
   animSteps('t-steps',T_STEPS);
   try{
-    const ctx=`Transform this LinkedIn profile into a stellar personal brand profile.\nLINKEDIN PROFILE TEXT:\n__LINKEDIN_TEXT__\nBRAND FOCUS: ${[...tFocus].join(', ')||'technical expertise'}\nTONE: ${document.getElementById('t-tone').value}\nAUDIENCE: ${document.getElementById('t-aud').value}\n${document.getElementById('t-notes').value?'INSTRUCTIONS: '+document.getElementById('t-notes').value:''}`;
-    const tLiUrl=document.getElementById('t-li-url').value.trim();
-    const result=await callAPI(buildGenPrompt(ctx),document.getElementById('t-gh').value.trim(),'transform',tLiUrl,pdfTexts.t);
+    const ctx=`Transform this LinkedIn profile (from screenshots) into a stellar personal brand profile.
+BRAND FOCUS: ${[...tFocus].join(', ')||'technical expertise'}
+TONE: ${document.getElementById('t-tone').value}
+AUDIENCE: ${document.getElementById('t-aud').value}
+${document.getElementById('t-notes').value?'INSTRUCTIONS: '+document.getElementById('t-notes').value:''}`;
+    const result=await callAPI(buildGenPrompt(ctx),document.getElementById('t-gh').value.trim(),'transform',imgs.t);
     document.getElementById('t-load').style.display='none';
     document.getElementById('t-form').style.display='block';
     renderTransform(result,'t-output','✦ Your transformed brand profile');
@@ -569,8 +556,19 @@ async function runScratch(){
   document.getElementById('s-output').style.display='none';
   animSteps('s-steps',S_STEPS);
   try{
-    const ctx=`Build a complete personal brand LinkedIn profile from scratch.\nName: ${document.getElementById('s-name').value||'Not provided'}\nLocation: ${document.getElementById('s-loc').value||'Not provided'}\nTitle: ${title}\nExperience: ${document.getElementById('s-yoe').value}\nWork history: ${exp}\nSkills: ${document.getElementById('s-skills').value||'Not provided'}\nEducation: ${document.getElementById('s-edu').value||'Not provided'}\nExtras: ${document.getElementById('s-notes').value||'None'}\nBRAND FOCUS: ${[...sFocus].join(', ')}\nTONE: ${document.getElementById('s-tone').value}\nAUDIENCE: ${document.getElementById('s-aud').value}`;
-    const result=await callAPI(buildGenPrompt(ctx),document.getElementById('s-gh').value.trim(),'transform');
+    const ctx=`Build a complete personal brand LinkedIn profile from scratch.
+Name: ${document.getElementById('s-name').value||'Not provided'}
+Location: ${document.getElementById('s-loc').value||'Not provided'}
+Title: ${title}
+Experience: ${document.getElementById('s-yoe').value}
+Work history: ${exp}
+Skills: ${document.getElementById('s-skills').value||'Not provided'}
+Education: ${document.getElementById('s-edu').value||'Not provided'}
+Extras: ${document.getElementById('s-notes').value||'None'}
+BRAND FOCUS: ${[...sFocus].join(', ')}
+TONE: ${document.getElementById('s-tone').value}
+AUDIENCE: ${document.getElementById('s-aud').value}`;
+    const result=await callAPI(buildGenPrompt(ctx),document.getElementById('s-gh').value.trim(),'transform',[]);
     document.getElementById('s-load').style.display='none';
     document.getElementById('s-form').style.display='block';
     renderTransform(result,'s-output','✦ Your new brand profile');
@@ -663,11 +661,7 @@ function cpBtn(btn){
     setTimeout(()=>{btn.textContent=orig;btn.classList.remove('ok')},2000);
   });
 }
-function cpAll(){
-  navigator.clipboard.writeText(allOutputText).then(()=>{
-    const t=document.getElementById('toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2500);
-  });
-}
+function cpAll(){navigator.clipboard.writeText(allOutputText).then(()=>{const t=document.getElementById('toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2500)})}
 function showErr(id,msg){const el=document.getElementById(id);el.style.display='block';el.innerHTML=`<b>⚠ Error:</b> ${esc(msg)}`}
 </script>
 </body>
