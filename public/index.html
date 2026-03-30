@@ -541,7 +541,52 @@ function renderScore(d){
 }
 
 function buildGenPrompt(ctx){
-  return `${ctx}\n__GITHUB_DATA__\n\nReturn ONLY raw JSON:\n{"name":"","location":"","headline":"Brand-first ≤220 chars","tagline":"1-2 sentence Featured brand statement","brand_angles":["3 labels"],"about":"200-280 words, hook first, story arc, first person, no clichés","experience":[{"role":"","company":"","type":"Full-time","period":"","bullets":["verb+metric","bullet","bullet"]}],"skills":["14-16 real skills"],"education":[{"school":"","degree":"","year":""}],"score_before":"Beginner|Intermediate|Advanced|All-Star","score_after":"All-Star","tips":["4 specific tips"]}`;
+  return `${ctx}
+__GITHUB_DATA__
+
+Read ALL sections visible in the screenshots carefully — name, location, headline, About/Summary, every single Experience entry, all Skills, Education, Featured section, Recommendations, and Activity.
+
+Return ONLY raw JSON (no markdown):
+{
+  "name": "Full name from profile",
+  "location": "City, Country from profile",
+  "headline": "Rewritten brand-first headline ≤220 chars — what do you stand for, not just a job title",
+  "tagline": "1–2 sentence Featured-section brand statement. First-person, specific, memorable.",
+  "brand_angles": ["3–4 short brand labels based on their actual work"],
+  "about": "Rewritten About section 220–300 words. Strong hook first sentence. Career story arc based on their actual background. First person. Zero clichés (no: passionate, results-driven, dynamic). End with what they are building or thinking about.",
+  "experience": [
+    {
+      "role": "Exact job title from profile",
+      "company": "Exact company name",
+      "type": "Full-time",
+      "period": "Exact period from profile",
+      "bullets": [
+        "Rewritten bullet: strong action verb + specific outcome/metric from their actual work",
+        "Second rewritten bullet based on their actual responsibilities",
+        "Third bullet"
+      ]
+    }
+  ],
+  "skills": ["All relevant skills from their profile plus gaps — 14–18 total, most relevant first"],
+  "education": [{"school": "Exact school name", "degree": "Degree · Field", "year": "Years"}],
+  "featured": "Rewritten featured section tagline if visible, or suggested one based on their work",
+  "recommendations_note": "Brief note on recommendations count and quality if visible",
+  "score_before": "Beginner|Intermediate|Advanced|All-Star",
+  "score_after": "All-Star",
+  "tips": [
+    "Specific actionable tip #1 for this exact person based on what you saw in their profile",
+    "Tip #2",
+    "Tip #3",
+    "Tip #4"
+  ]
+}
+
+Rules:
+- Extract ALL experience entries visible — do not skip any roles
+- Rewrite every bullet to be impact-first with strong action verbs
+- Keep all facts accurate — only improve the language and framing
+- Skills must include their actual skills plus strategic additions for their field
+- Tips must be specific to THIS person, not generic advice`;
 }
 
 async function runTransform(){
@@ -552,11 +597,14 @@ async function runTransform(){
   document.getElementById('t-output').style.display='none';
   animSteps('t-steps',T_STEPS);
   try{
-    const ctx=`Transform this LinkedIn profile (from screenshots) into a stellar personal brand profile.
+    const ctx=`Transform this LinkedIn profile into a stellar personal brand profile.
+Read all ${imgs.t.length} screenshot(s) carefully and extract every section before rewriting.
+Extract: name, location, headline, full About section, ALL experience roles with their details, skills list, education, featured section, recommendations if visible.
+
 BRAND FOCUS: ${[...tFocus].join(', ')||'technical expertise'}
 TONE: ${document.getElementById('t-tone').value}
 AUDIENCE: ${document.getElementById('t-aud').value}
-${document.getElementById('t-notes').value?'INSTRUCTIONS: '+document.getElementById('t-notes').value:''}`;
+${document.getElementById('t-notes').value?'SPECIAL INSTRUCTIONS: '+document.getElementById('t-notes').value:''}`;
     const result=await callAPI(buildGenPrompt(ctx),document.getElementById('t-gh').value.trim(),'transform',imgs.t);
     document.getElementById('t-load').style.display='none';
     document.getElementById('t-form').style.display='block';
@@ -659,6 +707,15 @@ function renderTransform(d,outputId,label){
       ${(d.education||[]).length?`<div class="li-sec">
         <div class="li-sec-hd">Education</div>
         ${d.education.map(e=>`<div class="edu-item"><div class="edu-ic">🎓</div><div><div class="edu-sch">${esc(e.school||'')}</div><div class="edu-deg">${esc(e.degree||'')}</div><div class="edu-yr">${esc(e.year||'')}</div></div></div>`).join('')}
+      </div>`:''}
+      ${d.featured?`<div class="li-sec">
+        <div class="li-sec-hd">Featured <span class="ibadge">✦ Suggested</span></div>
+        <div style="font-size:14px;color:var(--ink2);line-height:1.7;font-style:italic">"${esc(d.featured)}"</div>
+        <button class="cp" data-text="${esc(d.featured)}" onclick="cpBtn(this)">Copy</button>
+      </div>`:''}
+      ${d.recommendations_note?`<div class="li-sec">
+        <div class="li-sec-hd">Recommendations</div>
+        <div style="font-size:13px;color:var(--ink2);line-height:1.65">${esc(d.recommendations_note)}</div>
       </div>`:''}
     </div>
     <div>
