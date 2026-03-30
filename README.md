@@ -2,7 +2,7 @@
 
 An AI-powered tool that scores, transforms, and builds LinkedIn profiles using Claude Vision. Upload screenshots of your LinkedIn profile — the AI reads every section including your profile photo and background banner — and rewrites everything for maximum personal brand impact.
 
-**Live app → [linkedin-profile-builder.vercel.app](https://linkedin-profile-builder.vercel.app)**
+**Live app → [linkedin-profile-builder.vercel.app]((https://linkedin-profile-builder-637yzwjeg-manu-barkis-projects.vercel.app/))**
 
 ---
 
